@@ -193,17 +193,12 @@
         <div id="reservedNarrative" class="insight-line">Waiting for Oracle session sample.</div>
       </section>
 
-      <section class="grid cols-3 kpi-row">
-        <div class="card kpi"><div class="label">Current reserved sessions <span class="help" title="Current database-side footprint: dedicated sessions in Traditional mode or resident/open pooled servers in DRCP mode.">?</span></div><div id="dbFootprint" class="value">-</div></div>
-        <div class="card kpi"><div class="label">Workload in flight <span class="help" title="Application requests currently running in the benchmark engine. This is sampled from the backend, so it changes visibly during the benchmark.">?</span></div><div id="inFlightRequestsKpi" class="value">-</div></div>
-        <div class="card kpi"><div class="label">Reusable / idle capacity <span class="help" title="Traditional idle dedicated sessions, or DRCP resident servers immediately reusable by another service.">?</span></div><div id="idleReusable" class="value">-</div></div>
-      </section>
-
       <section class="card">
         <div class="panel-title">Live Benchmark Metrics</div>
         <div class="live-metrics-grid">
           <div><span>Reserved sessions</span><strong id="peakReservedKpi">-</strong></div>
           <div><span>Current footprint</span><strong id="liveFootprintKpi">-</strong></div>
+          <div><span>Workload in flight</span><strong id="inFlightRequestsKpi">-</strong></div>
           <div><span>Average latency</span><strong id="averageLatencyKpi">-</strong></div>
           <div><span>Throughput</span><strong id="throughputKpi">-</strong></div>
           <div><span>Completed requests</span><strong id="liveCompletedKpi">-</strong></div>

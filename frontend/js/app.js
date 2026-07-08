@@ -244,9 +244,7 @@ function renderLive(metrics, poolMetrics) {
   renderBenchmarkStatus(load);
 
   if (!poolMetrics.available) {
-    setText('dbFootprint', '-');
     setText('inFlightRequestsKpi', '-');
-    setText('idleReusable', '-');
     setText('liveFootprintKpi', '-');
     setText('averageLatencyKpi', '-');
     setText('throughputKpi', '-');
@@ -266,13 +264,9 @@ function renderLive(metrics, poolMetrics) {
   const drcpReusable = Math.max(0, drcpResident - drcpBusy);
   const isDrcp = state.runtime.drcpEnabled;
   const footprint = isDrcp ? drcpResident : dedicated;
-  const active = isDrcp ? drcpBusy : dedicatedActive;
-  const idleReusable = isDrcp ? drcpReusable : dedicatedIdle;
   const inFlight = Number(load.inFlightRequests || load.activeRequests || 0);
 
-  setText('dbFootprint', footprint);
   setText('inFlightRequestsKpi', inFlight);
-  setText('idleReusable', idleReusable);
   setText('liveFootprintKpi', footprint);
   setText('peakReservedKpi', load.peaks && load.peaks.reservedSessions ? load.peaks.reservedSessions : '-');
   setText('averageLatencyKpi', load.finalMetrics && load.finalMetrics.latencyMs ? `${load.finalMetrics.latencyMs} ms` : (load.samples && load.samples.length ? `${load.samples[load.samples.length - 1].latencyMs || 0} ms` : '-'));
