@@ -193,11 +193,10 @@
         <div id="reservedNarrative" class="insight-line">Waiting for Oracle session sample.</div>
       </section>
 
-      <section class="grid cols-4 kpi-row">
+      <section class="grid cols-3 kpi-row">
         <div class="card kpi"><div class="label">Current reserved sessions <span class="help" title="Current database-side footprint: dedicated sessions in Traditional mode or resident/open pooled servers in DRCP mode.">?</span></div><div id="dbFootprint" class="value">-</div></div>
-        <div class="card kpi"><div class="label">Current active sessions <span class="help" title="Sessions currently active in Oracle Database for the benchmark services.">?</span></div><div id="activeSessionsKpi" class="value">-</div></div>
+        <div class="card kpi"><div class="label">Workload in flight <span class="help" title="Application requests currently running in the benchmark engine. This is sampled from the backend, so it changes visibly during the benchmark.">?</span></div><div id="inFlightRequestsKpi" class="value">-</div></div>
         <div class="card kpi"><div class="label">Reusable / idle capacity <span class="help" title="Traditional idle dedicated sessions, or DRCP resident servers immediately reusable by another service.">?</span></div><div id="idleReusable" class="value">-</div></div>
-        <div class="card kpi"><div class="label">Connection reuse ratio <span class="help" title="DRCP hit/request ratio when available from Oracle connection pool statistics. Traditional mode does not expose DRCP reuse.">?</span></div><div id="reuseRatioKpi" class="value">-</div></div>
       </section>
 
       <section class="card">
@@ -242,7 +241,6 @@
           <div><span>Sessions saved</span><strong id="sessionsSavedValue">-</strong></div>
           <div><span>Peak reduction</span><strong id="peakReductionValue">-</strong></div>
           <div><span>Idle reduction</span><strong id="idleReductionValue">-</strong></div>
-          <div><span>DRCP reuse</span><strong id="reuseImprovementValue">-</strong></div>
         </div>
       </section>
       <section class="grid cols-2">

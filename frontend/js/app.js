@@ -245,9 +245,8 @@ function renderLive(metrics, poolMetrics) {
 
   if (!poolMetrics.available) {
     setText('dbFootprint', '-');
-    setText('activeSessionsKpi', '-');
+    setText('inFlightRequestsKpi', '-');
     setText('idleReusable', '-');
-    setText('reuseRatioKpi', '-');
     setText('liveFootprintKpi', '-');
     setText('averageLatencyKpi', '-');
     setText('throughputKpi', '-');
@@ -269,12 +268,11 @@ function renderLive(metrics, poolMetrics) {
   const footprint = isDrcp ? drcpResident : dedicated;
   const active = isDrcp ? drcpBusy : dedicatedActive;
   const idleReusable = isDrcp ? drcpReusable : dedicatedIdle;
-  const reuseRatio = reuseRatioText(poolMetrics);
+  const inFlight = Number(load.inFlightRequests || load.activeRequests || 0);
 
   setText('dbFootprint', footprint);
-  setText('activeSessionsKpi', active);
+  setText('inFlightRequestsKpi', inFlight);
   setText('idleReusable', idleReusable);
-  setText('reuseRatioKpi', reuseRatio);
   setText('liveFootprintKpi', footprint);
   setText('peakReservedKpi', load.peaks && load.peaks.reservedSessions ? load.peaks.reservedSessions : '-');
   setText('averageLatencyKpi', load.finalMetrics && load.finalMetrics.latencyMs ? `${load.finalMetrics.latencyMs} ms` : (load.samples && load.samples.length ? `${load.samples[load.samples.length - 1].latencyMs || 0} ms` : '-'));
@@ -296,14 +294,6 @@ function renderLive(metrics, poolMetrics) {
     : `Traditional Pooling has ${dedicated} reserved dedicated sessions, ${dedicatedActive} active and ${dedicatedIdle} idle.`;
   qs('poolMetricsNote').textContent = `${poolMetrics.note || 'Oracle evidence refreshed.'} Last sample: ${new Date(poolMetrics.collectedAt).toLocaleTimeString()} (${poolMetrics.latencyMs} ms).`;
   renderOracleEvidence(poolMetrics);
-}
-
-function reuseRatioText(poolMetrics) {
-  const totals = poolMetrics.cpoolTotals || {};
-  const requests = Number(totals.requests || 0);
-  const hits = Number(totals.hits || 0);
-  if (!state.runtime || !state.runtime.drcpEnabled || requests <= 0) return '-';
-  return `${Math.round((hits / requests) * 100)}%`;
 }
 
 function renderBenchmarkStatus(load) {
@@ -622,7 +612,6 @@ function renderWinnerSummary(traditional, drcp) {
     setText('sessionsSavedValue', '-');
     setText('peakReductionValue', '-');
     setText('idleReductionValue', '-');
-    setText('reuseImprovementValue', '-');
     return;
   }
   const tradPeak = Number(traditional.PEAK_RESERVED_SESSIONS || 0);
@@ -632,13 +621,11 @@ function renderWinnerSummary(traditional, drcp) {
   const sessionsSaved = Math.max(0, tradPeak - drcpPeak);
   const peakReduction = tradPeak > 0 ? Math.round((sessionsSaved / tradPeak) * 100) : 0;
   const idleReduction = tradIdle > 0 ? Math.round(Math.max(0, (tradIdle - drcpIdle) / tradIdle) * 100) : 0;
-  const reuse = drcp.CONNECTION_REUSE_RATIO !== null && drcp.CONNECTION_REUSE_RATIO !== undefined ? `${drcp.CONNECTION_REUSE_RATIO}%` : 'Oracle evidence';
   setText('winnerTitle', `Oracle DRCP reduced database footprint by ${peakReduction}%`);
   setText('winnerText', `Same application, workload, schemas, business logic, and Oracle Database. DRCP changed only the connection strategy and saved ${sessionsSaved} peak database-side sessions while maintaining comparable execution metrics.`);
   setText('sessionsSavedValue', sessionsSaved);
   setText('peakReductionValue', `${peakReduction}%`);
   setText('idleReductionValue', `${idleReduction}%`);
-  setText('reuseImprovementValue', reuse);
 }
 
 function comparisonRows(traditional, drcp) {
@@ -649,7 +636,6 @@ function comparisonRows(traditional, drcp) {
     ['Peak active sessions', traditional.PEAK_ACTIVE_SESSIONS, drcp.PEAK_ACTIVE_SESSIONS],
     ['Peak idle / reusable', traditional.PEAK_IDLE_SESSIONS, drcp.PEAK_IDLE_SESSIONS],
     ['Resident servers', traditional.PEAK_RESIDENT_SERVERS, drcp.PEAK_RESIDENT_SERVERS],
-    ['Reuse ratio', pct(traditional.CONNECTION_REUSE_RATIO), pct(drcp.CONNECTION_REUSE_RATIO)],
     ['Average latency', `${traditional.AVERAGE_LATENCY_MS || '-'} ms`, `${drcp.AVERAGE_LATENCY_MS || '-'} ms`],
     ['P95 latency', `${traditional.P95_LATENCY_MS || '-'} ms`, `${drcp.P95_LATENCY_MS || '-'} ms`],
     ['Throughput', traditional.PEAK_THROUGHPUT_RPS, drcp.PEAK_THROUGHPUT_RPS],
