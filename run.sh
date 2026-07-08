@@ -44,6 +44,39 @@ export PORT
 cd "$ROOT_DIR"
 mkdir -p "$ROOT_DIR/logs"
 
+stop_demo_pid() {
+  local pid="$1"
+  if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+    return 0
+  fi
+  if ps -p "$pid" -o args= | grep -q "backend/src/server.js"; then
+    local cwd
+    cwd="$(readlink "/proc/$pid/cwd" 2>/dev/null || true)"
+    if [ "$cwd" = "$ROOT_DIR" ]; then
+      echo "Stopping existing DRCP demo server PID $pid"
+      kill "$pid"
+      for _ in $(seq 1 20); do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.5
+      done
+      return 0
+    fi
+  fi
+  echo "Refusing to stop non-demo process using this runtime: $pid"
+  exit 1
+}
+
+stop_demo_on_port() {
+  local pids
+  pids="$(ss -ltnp 2>/dev/null | awk -v port=":$PORT" '$4 ~ port"$" {print}' | sed -n 's/.*pid=\([0-9][0-9]*\).*/\1/p' | sort -u)"
+  if [ -z "$pids" ]; then
+    return 0
+  fi
+  for pid in $pids; do
+    stop_demo_pid "$pid"
+  done
+}
+
 if [ ! -f "$ROOT_DIR/config/demo.env" ]; then
   cp "$ROOT_DIR/config/demo.env.example" "$ROOT_DIR/config/demo.env"
   echo "Created config/demo.env from config/demo.env.example"
@@ -56,21 +89,11 @@ fi
 
 if [ -f "$PID_FILE" ]; then
   old_pid="$(cat "$PID_FILE" 2>/dev/null || true)"
-  if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
-    if ps -p "$old_pid" -o args= | grep -q "backend/src/server.js"; then
-      echo "Stopping existing DRCP demo server PID $old_pid"
-      kill "$old_pid"
-      for _ in $(seq 1 20); do
-        kill -0 "$old_pid" 2>/dev/null || break
-        sleep 0.5
-      done
-    else
-      echo "PID file points to a non-demo process; refusing to stop it: $old_pid"
-      exit 1
-    fi
-  fi
+  stop_demo_pid "$old_pid"
   rm -f "$PID_FILE"
 fi
+
+stop_demo_on_port
 
 echo "Starting DRCP demo on http://localhost:$PORT in ${MODE^^} mode"
 

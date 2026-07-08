@@ -87,6 +87,8 @@ async function startLoad(options) {
     latencies: [],
     samples: [],
     finalMetrics: null,
+    oracleBaseline: null,
+    oracleBaselineWarning: null,
     peaks: {
       latencyMs: 0,
       throughputRps: 0,
@@ -135,7 +137,7 @@ async function startLoad(options) {
     };
   }
 
-  function summarizeOracleMetrics(metrics) {
+  function rawOracleMetrics(metrics) {
     const totals = metrics.totals || {};
     const reserved = config.executionMode === 'drcp'
       ? Number(totals.drcp_open_servers || totals.pooled_sessions || 0)
@@ -153,6 +155,31 @@ async function startLoad(options) {
       residentServers: Number(totals.drcp_open_servers || 0),
       connectionReuseRatio: requests > 0 ? Math.round((hits / requests) * 10000) / 100 : null
     };
+  }
+
+  function summarizeOracleMetrics(metrics) {
+    const raw = rawOracleMetrics(metrics);
+    if (config.executionMode !== 'drcp' || !run.oracleBaseline) return raw;
+
+    const additionalOpenServers = Math.max(0, raw.reservedSessions - run.oracleBaseline.reservedSessions);
+    const workloadResidentDemand = Math.max(additionalOpenServers, raw.activeSessions);
+    return {
+      ...raw,
+      reservedSessions: workloadResidentDemand,
+      idleSessions: Math.max(0, workloadResidentDemand - raw.activeSessions),
+      residentServers: Math.max(0, raw.residentServers - run.oracleBaseline.residentServers),
+      rawReservedSessions: raw.reservedSessions,
+      rawIdleSessions: raw.idleSessions,
+      rawResidentServers: raw.residentServers,
+      baselineReservedSessions: run.oracleBaseline.reservedSessions,
+      baselineResidentServers: run.oracleBaseline.residentServers
+    };
+  }
+
+  async function captureOracleBaseline() {
+    if (config.executionMode !== 'drcp') return;
+    const metrics = await getPoolMetrics({ force: true });
+    run.oracleBaseline = rawOracleMetrics(metrics);
   }
 
   async function sample({ final = false, requireAvailable = false } = {}) {
@@ -266,6 +293,9 @@ async function startLoad(options) {
     }
   }
 
+  await captureOracleBaseline().catch(err => {
+    run.oracleBaselineWarning = err.message;
+  });
   await sample().catch(() => {});
   await runWarmup();
   run.completedRequests = 0;
@@ -323,7 +353,10 @@ async function startLoad(options) {
       const durationSeconds = Math.max(0.001, measurementDurationMs / 1000);
       const persistedSamples = run.samples.length;
       const status = run.stopRequested ? 'STOPPED' : STATES.COMPLETED;
-      const summaryText = `${runtime.executionMode.toUpperCase()} benchmark completed after draining ${run.completedRequests + run.errors} requests. Peak footprint ${run.peaks.reservedSessions}; final footprint ${finalSample.reservedSessions}.`;
+      const baselineText = config.executionMode === 'drcp' && run.oracleBaseline
+        ? ` DRCP baseline at run start was ${run.oracleBaseline.reservedSessions} resident/open servers; persisted footprint is incremental workload demand over that baseline.`
+        : '';
+      const summaryText = `${runtime.executionMode.toUpperCase()} benchmark completed after draining ${run.completedRequests + run.errors} requests. Peak footprint ${run.peaks.reservedSessions}; final footprint ${finalSample.reservedSessions}.${baselineText}`;
       delete run.latencies;
       await finishRun(run.id, {
         status,

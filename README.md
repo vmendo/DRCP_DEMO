@@ -147,6 +147,12 @@ Start in Oracle DRCP mode:
 ./run.sh DRCP
 ```
 
+In Autonomous Database, the database-resident DRCP pool can remain warm after
+the Node process stops. The benchmark captures a DRCP baseline at run start and
+persists DRCP footprint as incremental workload demand over that baseline. This
+keeps repeated DRCP runs comparable even when `V$CPOOL_STATS` still shows
+resident servers opened by an earlier run.
+
 Open:
 
 ```text
