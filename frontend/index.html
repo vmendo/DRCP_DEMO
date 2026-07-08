@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Oracle DRCP Benchmark Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-grid">
+      <div>
+        <h1>Oracle DRCP Benchmark Demo</h1>
+        <div class="sub">Same application, same workload, same Oracle Database. Only the connection strategy changes.</div>
+      </div>
+      <div><span id="headerModeBadge" class="badge">Detecting mode</span></div>
+    </div>
+  </header>
+
+  <nav>
+    <div class="nav-inner" role="tablist" aria-label="DRCP demo navigation">
+      <button class="active" data-tab="benchmark" role="tab">Run Benchmark</button>
+      <button data-tab="results" role="tab">Benchmark Comparison</button>
+      <button data-tab="evidence" role="tab">Oracle Evidence</button>
+      <button data-tab="architecture" role="tab">Architecture</button>
+      <button data-tab="setup" role="tab">Demo Setup</button>
+    </div>
+  </nav>
+
+  <main>
+    <section id="tab-benchmark" class="tab-page active">
+      <section id="modeHero" class="mode-hero">
+        <div>
+          <div class="eyebrow">Current application mode</div>
+          <div id="currentModeTitle" class="mode-title">Detecting runtime</div>
+          <div id="currentModeText" class="mode-copy">The browser reads this from the backend runtime configuration. It cannot switch datasource mode.</div>
+        </div>
+        <div class="mode-facts">
+          <div><span>Database server mode</span><strong id="serverMode">-</strong></div>
+          <div><span>Pool implementation</span><strong id="poolImplementation">-</strong></div>
+          <div><span>Connection URL</span><strong id="connectionUrl">-</strong></div>
+        </div>
+      </section>
+
+      <section class="fairness-banner">
+        <div>
+          <div class="eyebrow">Fair benchmark comparison</div>
+          <strong>Same application. Same workload. Same schemas. Same business logic. Same Oracle Database.</strong>
+          <span>Only the Oracle Database connection strategy changes between runs.</span>
+        </div>
+      </section>
+
+      <section class="demo-flow-panel" aria-label="Demo flow">
+        <div class="eyebrow">Demo flow</div>
+        <div class="demo-flow">
+          <div><span>1</span><strong>Start Traditional</strong></div>
+          <div class="flow-arrow">→</div>
+          <div><span>2</span><strong>Run Benchmark</strong></div>
+          <div class="flow-arrow">→</div>
+          <div><span>3</span><strong>Restart in Oracle DRCP</strong></div>
+          <div class="flow-arrow">→</div>
+          <div><span>4</span><strong>Run Benchmark</strong></div>
+          <div class="flow-arrow">→</div>
+          <div><span>5</span><strong>Open Benchmark Comparison</strong></div>
+        </div>
+      </section>
+
+      <section class="grid cols-2">
+        <div class="card">
+          <div class="panel-title">Runtime Configuration Summary</div>
+          <div id="runtimeSummary" class="runtime-summary"></div>
+          <details class="config-details">
+            <summary>Show Full Runtime Configuration</summary>
+            <pre id="runtimeJson">{}</pre>
+          </details>
+        </div>
+        <div class="card switch-card">
+          <div class="panel-title">How to Switch Modes</div>
+          <div id="backendConfirmation" class="backend-confirmation">Current Backend: Detecting</div>
+          <div id="switchInstructions" class="instruction-list"></div>
+          <div class="panel-sub">The UI only observes the current backend process. Stop and restart the application outside the browser, then refresh this page.</div>
+        </div>
+      </section>
+
+      <section class="grid cols-2">
+        <div class="card">
+          <div class="panel-title">Initial Database Footprint</div>
+          <div class="story-banner">Before generating any workload, Traditional Pooling already reserves dedicated Oracle Database sessions for every service. Oracle DRCP starts with a shared resident connection pool instead.</div>
+          <div class="footprint-flow">
+            <div><strong>Traditional Pooling</strong><span>Dedicated client pools</span><span>Reserved database sessions</span></div>
+            <div><strong>Oracle DRCP</strong><span>Shared resident pool</span><span>Reusable resident servers</span></div>
+          </div>
+          <div class="footprint-config">
+            <div class="config-side traditional">
+              <h3>Traditional Pooling</h3>
+              <dl>
+                <dt>Services</dt><dd id="initialTraditionalServices">5</dd>
+                <dt>Initial pool size / service</dt><dd id="initialTraditionalMin">-</dd>
+                <dt>Maximum pool size / service</dt><dd id="initialTraditionalMax">-</dd>
+                <dt>Total reserved sessions</dt><dd id="initialTraditionalTotal">-</dd>
+                <dt>Potential maximum sessions</dt><dd id="initialTraditionalPotential">-</dd>
+                <dt>Current dedicated sessions</dt><dd id="initialTraditionalCurrent">-</dd>
+              </dl>
+            </div>
+            <div class="config-side drcp">
+              <h3>Oracle DRCP</h3>
+              <dl>
+                <dt>Initial resident servers</dt><dd id="initialDrcpResidentMin">-</dd>
+                <dt>Maximum resident servers</dt><dd id="initialDrcpResidentMax">-</dd>
+                <dt>Current resident servers</dt><dd id="initialDrcpCurrent">-</dd>
+                <dt>Shared pool</dt><dd>Yes</dd>
+                <dt>Services sharing pool</dt><dd id="initialDrcpServices">5</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="panel-title">Application Connection Budget</div>
+          <div class="limit-grid">
+            <div><span>Budget</span><strong id="dbSessionLimit">-</strong></div>
+            <div><span>Current footprint</span><strong id="dbSessionCurrent">-</strong></div>
+            <div><span>Budget use</span><strong id="dbSessionPct">-</strong></div>
+          </div>
+          <div class="limit-meter"><div id="dbSessionMeter"></div></div>
+          <div id="dbSessionSource" class="source-pill">Source: pending</div>
+          <div id="dbLimitWarning" class="limit-warning" hidden>Traditional pooling is using a high percentage of the application connection budget.</div>
+        </div>
+      </section>
+
+      <section class="card load-generator-card">
+        <div class="panel-title">Run Reproducible Benchmark</div>
+        <div class="benchmark-identity-strip">
+          <div><span>Benchmark name</span><strong id="actionBenchmarkName">DRCP connection pool benchmark</strong></div>
+          <div><span>Run identifier</span><strong id="actionBenchmarkRunId">Ready</strong></div>
+          <div><span>Execution mode</span><strong id="actionBenchmarkMode">Detecting</strong></div>
+          <div><span>Current status</span><strong id="actionBenchmarkStatus">Ready</strong></div>
+          <div><span>Results saved</span><strong id="actionResultsSaved">-</strong></div>
+        </div>
+        <div class="benchmark-explainer">
+          <strong>Running this benchmark will:</strong>
+          <span>Run a 10 second warm-up outside the measured results</span>
+          <span>Generate the configured steady workload</span>
+          <span>Collect Oracle Database statistics</span>
+          <span>Capture benchmark samples</span>
+          <span>Persist measured benchmark results</span>
+        </div>
+        <div class="controls">
+          <div><label for="purity">Session purity</label><select id="purity"><option>POOLED</option><option>NEW</option></select><div id="purityNote" class="control-note"></div></div>
+          <div><label for="tagStrategy">Tag strategy</label><select id="tagStrategy"><option value="mixed">Mixed tags</option><option value="fixed">Fixed per service</option></select><div id="tagNote" class="control-note"></div></div>
+          <div><label for="concurrency">Concurrency</label><input id="concurrency" type="number" value="6" min="1" max="50"><div id="concurrencyNote" class="control-note"></div></div>
+          <div><label for="duration">Measured duration seconds</label><input id="duration" type="number" value="45" min="10" max="300"><div id="durationNote" class="control-note"></div></div>
+        </div>
+        <div class="action-row">
+          <button id="runLoad" class="primary">Run Benchmark</button>
+          <button id="stopLoad" class="secondary">Stop Benchmark</button>
+          <button id="initializePools" class="secondary">Initialize Pools</button>
+          <button id="refreshNow" class="secondary">Refresh Metrics</button>
+          <span id="actionStatus" class="panel-sub"></span>
+        </div>
+      </section>
+
+      <section class="card benchmark-status-card">
+        <div class="panel-title">Benchmark Status</div>
+        <div class="current-benchmark">
+          <div>
+            <div class="eyebrow">Current Benchmark</div>
+            <div id="currentBenchmarkName" class="summary-title">Waiting for runtime</div>
+          </div>
+          <span id="benchmarkStatusBadge" class="status-badge">Ready</span>
+        </div>
+        <div id="benchmarkStatusGrid" class="runtime-summary benchmark-status-grid"></div>
+      </section>
+
+      <section class="card sessions-story-card">
+        <div class="panel-title">Reserved vs Actually Used Sessions</div>
+        <div class="panel-sub">This is the central DRCP story: the scaling problem is usually not active work, but reserved idle database sessions.</div>
+        <div class="visual-summary">
+          <div class="summary-side">
+            <h3>Traditional Pooling</h3>
+            <div class="bar-row"><span>Reserved</span><div class="bar-track"><div id="traditionalSessionsBar" class="bar-fill"></div></div><strong id="traditionalCurrent">0</strong></div>
+            <div class="bar-row"><span>Active</span><div class="bar-track"><div id="traditionalActiveBar" class="bar-fill active"></div></div><strong id="traditionalActive">0</strong></div>
+            <div class="bar-row"><span>Idle</span><div class="bar-track"><div id="traditionalIdleBar" class="bar-fill idle"></div></div><strong id="traditionalIdle">0</strong></div>
+          </div>
+          <div class="summary-side">
+            <h3>Oracle DRCP</h3>
+            <div class="bar-row"><span>Resident</span><div class="bar-track"><div id="drcpSessionsBar" class="bar-fill drcp"></div></div><strong id="drcpCurrent">0</strong></div>
+            <div class="bar-row"><span>Busy</span><div class="bar-track"><div id="drcpActiveBar" class="bar-fill drcp active"></div></div><strong id="drcpActive">0</strong></div>
+            <div class="bar-row"><span>Reusable</span><div class="bar-track"><div id="drcpIdleBar" class="bar-fill drcp idle"></div></div><strong id="drcpIdle">0</strong></div>
+          </div>
+        </div>
+        <div id="reservedNarrative" class="insight-line">Waiting for Oracle session sample.</div>
+      </section>
+
+      <section class="grid cols-4 kpi-row">
+        <div class="card kpi"><div class="label">Current reserved sessions <span class="help" title="Current database-side footprint: dedicated sessions in Traditional mode or resident/open pooled servers in DRCP mode.">?</span></div><div id="dbFootprint" class="value">-</div></div>
+        <div class="card kpi"><div class="label">Current active sessions <span class="help" title="Sessions currently active in Oracle Database for the benchmark services.">?</span></div><div id="activeSessionsKpi" class="value">-</div></div>
+        <div class="card kpi"><div class="label">Reusable / idle capacity <span class="help" title="Traditional idle dedicated sessions, or DRCP resident servers immediately reusable by another service.">?</span></div><div id="idleReusable" class="value">-</div></div>
+        <div class="card kpi"><div class="label">Connection reuse ratio <span class="help" title="DRCP hit/request ratio when available from Oracle connection pool statistics. Traditional mode does not expose DRCP reuse.">?</span></div><div id="reuseRatioKpi" class="value">-</div></div>
+      </section>
+
+      <section class="card">
+        <div class="panel-title">Live Benchmark Metrics</div>
+        <div class="live-metrics-grid">
+          <div><span>Reserved sessions</span><strong id="peakReservedKpi">-</strong></div>
+          <div><span>Current footprint</span><strong id="liveFootprintKpi">-</strong></div>
+          <div><span>Average latency</span><strong id="averageLatencyKpi">-</strong></div>
+          <div><span>Throughput</span><strong id="throughputKpi">-</strong></div>
+          <div><span>Completed requests</span><strong id="liveCompletedKpi">-</strong></div>
+          <div><span>Errors</span><strong id="liveErrorsKpi">-</strong></div>
+        </div>
+      </section>
+
+      <section class="card benchmark-summary-card">
+        <div class="panel-title">Benchmark Summary</div>
+        <div id="benchmarkSummaryText" class="summary-copy">Run the benchmark to persist a benchmark run that can be compared in the Benchmark Comparison page.</div>
+        <div class="summary-mini-grid">
+          <div><span>Completed</span><strong id="loadCompleted">0</strong></div>
+          <div><span>Current Duration</span><strong id="currentDuration">-</strong></div>
+          <div><span>Results Saved</span><strong id="resultsSaved">-</strong></div>
+        </div>
+      </section>
+    </section>
+
+    <section id="tab-results" class="tab-page">
+      <section class="card result-summary">
+        <div>
+          <div class="eyebrow">What did we gain?</div>
+          <div id="executiveSummary" class="summary-title">Run Traditional and DRCP benchmarks to compare database footprint.</div>
+          <div id="historyWarning" class="panel-sub"></div>
+        </div>
+        <button id="refreshResults" class="secondary">Refresh Comparison</button>
+      </section>
+      <section id="winnerCard" class="winner-card">
+        <div>
+          <div class="eyebrow">Benchmark conclusion</div>
+          <strong id="winnerTitle">Waiting for both benchmark modes</strong>
+          <span id="winnerText">Run one Traditional benchmark and one Oracle DRCP benchmark to calculate the database footprint reduction.</span>
+        </div>
+        <div class="winner-metrics">
+          <div><span>Sessions saved</span><strong id="sessionsSavedValue">-</strong></div>
+          <div><span>Peak reduction</span><strong id="peakReductionValue">-</strong></div>
+          <div><span>Idle reduction</span><strong id="idleReductionValue">-</strong></div>
+          <div><span>DRCP reuse</span><strong id="reuseImprovementValue">-</strong></div>
+        </div>
+      </section>
+      <section class="grid cols-2">
+        <div class="card">
+          <div class="panel-title">Select Benchmark Runs</div>
+          <div class="result-selectors">
+            <label>Traditional run<select id="traditionalRunSelect"></select></label>
+            <label>DRCP run<select id="drcpRunSelect"></select></label>
+          </div>
+          <table class="compact-table">
+            <thead><tr><th>Metric</th><th>Traditional</th><th>Oracle DRCP</th></tr></thead>
+            <tbody id="comparisonTable"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="panel-title">Database Footprint Comparison</div>
+          <div class="comparison-bars">
+            <div><span>Peak reserved / resident</span><div class="bar-track"><div id="compareTraditionalBar" class="bar-fill"></div></div><strong id="compareTraditionalValue">-</strong></div>
+            <div><span>DRCP resident footprint</span><div class="bar-track"><div id="compareDrcpBar" class="bar-fill drcp"></div></div><strong id="compareDrcpValue">-</strong></div>
+            <div><span>Idle footprint</span><div class="bar-track"><div id="compareIdleBar" class="bar-fill idle"></div></div><strong id="compareIdleValue">-</strong></div>
+          </div>
+        </div>
+      </section>
+      <section class="grid cols-2">
+        <div class="card">
+          <div class="panel-title">Sessions Over Time</div>
+          <div id="sessionsChartMessage" class="chart-message" hidden></div>
+          <svg id="sessionsChart" class="chart" viewBox="0 0 680 220" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="card">
+          <div class="panel-title">Throughput and Latency</div>
+          <div id="latencyChartMessage" class="chart-message" hidden></div>
+          <svg id="latencyChart" class="chart" viewBox="0 0 680 220" preserveAspectRatio="none"></svg>
+        </div>
+      </section>
+      <section class="card">
+        <div class="panel-title">Benchmark History</div>
+        <table>
+          <thead><tr><th>Date</th><th>Mode</th><th>Status</th><th>Duration</th><th>Completed</th><th>Errors</th><th>Peak footprint</th><th>Idle</th><th>P95</th><th>Throughput</th></tr></thead>
+          <tbody id="historyRows"></tbody>
+        </table>
+      </section>
+    </section>
+
+    <section id="tab-evidence" class="tab-page">
+      <section class="card">
+        <div class="panel-title">How do we know?</div>
+        <div class="panel-sub">These panels show Oracle Database evidence exposed by ORDS and proxied by the Node backend. Every value is either a V$ view row or derived directly from those rows.</div>
+        <div class="action-row">
+          <button id="refreshEvidence" class="secondary">Refresh Evidence</button>
+          <span id="poolMetricsNote" class="panel-sub">Waiting for sample.</span>
+        </div>
+      </section>
+      <section class="grid cols-2">
+        <div class="card"><div class="panel-title">Reserved Sessions</div><div id="evidenceTotals" class="runtime-summary"></div></div>
+        <div class="card"><div class="panel-title">SQL Sources</div><pre>select username, server, status, count(*)
+from v$session
+where username like 'DRCP_%'
+group by username, server, status;
+
+select resource_name, current_utilization, limit_value
+from v$resource_limit
+where resource_name = 'sessions';
+
+select pool_name, num_open_servers, num_busy_servers,
+       num_requests, num_hits
+from v$cpool_stats;
+
+select cclass_name, purity, tag, connection_status
+from v$cpool_conn_info;
+
+select pool_name, cclass_name
+from v$cpool_cc_info;</pre></div>
+      </section>
+      <section class="evidence-grid">
+        <div class="evidence-box"><h3><span>Session footprint</span><code>V$SESSION</code></h3><div id="evidenceSession"></div></div>
+        <div class="evidence-box"><h3><span>Resource limit</span><code>V$RESOURCE_LIMIT</code></h3><div id="evidenceResourceLimit"></div></div>
+        <div class="evidence-box"><h3><span>DRCP aggregate pool</span><code>V$CPOOL_STATS</code></h3><div id="evidenceCpoolStats"></div></div>
+        <div class="evidence-box"><h3><span>DRCP connection reuse</span><code>V$CPOOL_CONN_INFO</code></h3><div id="evidenceCpoolConn"></div></div>
+        <div class="evidence-box"><h3><span>Connection classes</span><code>V$CPOOL_CC_INFO</code></h3><div id="evidenceCpoolClass"></div></div>
+      </section>
+    </section>
+
+    <section id="tab-architecture" class="tab-page">
+      <section class="card">
+        <div class="panel-title">Why does Oracle DRCP work?</div>
+        <div class="architecture-compare">
+          <div class="arch-panel traditional">
+            <h3>Traditional Pooling</h3>
+            <div class="arch-services">
+              <span>Catalog pool</span><span>Inventory pool</span><span>Orders pool</span><span>Payments pool</span><span>Customers pool</span>
+            </div>
+            <div class="arch-arrow">Each service reserves DEDICATED database sessions</div>
+            <div class="arch-db">Oracle Database<br><strong>many idle dedicated sessions</strong></div>
+          </div>
+          <div class="arch-panel drcp">
+            <h3>Oracle DRCP</h3>
+            <div class="arch-services">
+              <span>Catalog</span><span>Inventory</span><span>Orders</span><span>Payments</span><span>Customers</span>
+            </div>
+            <div class="arch-arrow">Services borrow reusable resident servers</div>
+            <div class="arch-db">Database Resident Connection Pool<br><strong>shared reusable server processes</strong></div>
+          </div>
+        </div>
+      </section>
+      <section class="grid cols-3">
+        <div class="card"><div class="panel-title">Connection Classes</div><p>Each service requests its own DRCP connection class, so reuse is organized without duplicating a resident pool per service.</p></div>
+        <div class="card"><div class="panel-title">Session Tagging</div><p>Tags describe reusable state such as service, region, and role. Matching tags reduce unnecessary setup on checkout.</p></div>
+        <div class="card"><div class="panel-title">Session Purity</div><p><strong>POOLED</strong> favors reuse. <strong>NEW</strong> asks for cleaner state when stricter isolation is required.</p></div>
+        <div class="card"><div class="panel-title">Session Fix-up</div><p>The backend sets module, action, client identifier, and connection tag after checkout so Oracle evidence remains attributable.</p></div>
+        <div class="card"><div class="panel-title">Shared Resident Servers</div><p>DRCP server processes live in the database tier and are reused across service requests instead of being reserved by each client pool.</p></div>
+        <div class="card"><div class="panel-title">Idle Session Waste</div><p>Traditional pool minimums multiply by service count. DRCP keeps the reusable capacity in one shared place.</p></div>
+      </section>
+    </section>
+
+    <section id="tab-setup" class="tab-page">
+      <section class="card">
+        <div class="panel-title">Demo Setup</div>
+        <div id="setupReadiness" class="readiness-banner">Checking readiness</div>
+        <div id="setupStatus" class="setup-grid"></div>
+        <div class="action-row">
+          <button id="refreshSetup" class="secondary">Refresh Setup</button>
+          <button id="resetBenchmark" class="secondary danger">Clear Benchmark History</button>
+          <span id="setupActionStatus" class="panel-sub"></span>
+        </div>
+      </section>
+    </section>
+
+    <div class="footer">Created by <strong>Anonymous</strong></div>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <!-- ORACLE DEMO RUNTIME v7.4 -->
+  <script
+    async
+    src="https://objectstorage.us-ashburn-1.oraclecloud.com/p/6qf7jK9XUFAjQqkgARIMisRfuQ8QLnS7pGGWLHD3bqTBe-M6X4NY5REw-Gs2iVk0/n/oraclepartnersas/b/vibecode/o/oracle-demo-runtime.js?skill=oracle-database-demos"
+    data-vertical="retail-operations"
+    data-features="drcp,connection-classes,connection-tagging,session-purity,session-fixup"
+    data-builtat="2026-07-01T10:30:00Z"
+    data-filename="index.html"
+    data-heading="Oracle DRCP Benchmark Demo"
+    data-prompt="DRCP prompt 08 frontend refactoring. Guided benchmark navigation using backend runtime configuration and persisted benchmark history."
+    data-creator="Anonymous"
+    data-chatsid="drcp0629a"
+    data-skill-version="7.4">
+  </script>
+</body>
+</html>

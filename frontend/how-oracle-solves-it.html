@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Oracle DRCP Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-grid">
+      <div>
+        <h1>Oracle DRCP Architecture</h1>
+        <div class="sub">Oracle DRCP moves pooling into the database so many distributed services can share pooled server processes while retaining service-level isolation.</div>
+      </div>
+      <div><a class="badge" href="/">Back to Benchmark</a></div>
+    </div>
+  </header>
+  <nav>
+    <div class="nav-inner">
+      <a href="/">Benchmark</a>
+      <a href="/demo-story.html">Demo Story</a>
+      <a href="/demo-components.html">Demo Components</a>
+      <button class="active">Architecture</button>
+    </div>
+  </nav>
+  <main>
+    <section class="card">
+      <div class="panel-title">The Pattern Oracle DRCP Changes</div>
+      <div class="panel-sub">The application still has five services and five schemas. The difference is where reusable database server processes live.</div>
+      <div class="grid cols-2" style="margin-top:14px">
+        <div class="card" style="box-shadow:none;background:var(--redwood-warm)">
+          <div class="panel-title">Traditional: service pool -> dedicated sessions</div>
+          <div style="display:grid;gap:8px;margin-top:10px">
+            <div class="pool-sizing"><div><strong>Catalog service</strong><span>5+ DEDICATED</span></div></div>
+            <div class="pool-sizing"><div><strong>Inventory service</strong><span>5+ DEDICATED</span></div></div>
+            <div class="pool-sizing"><div><strong>Orders service</strong><span>5+ DEDICATED</span></div></div>
+            <div class="pool-sizing"><div><strong>Payments service</strong><span>5+ DEDICATED</span></div></div>
+            <div class="pool-sizing"><div><strong>Customers service</strong><span>5+ DEDICATED</span></div></div>
+          </div>
+          <p class="panel-sub" style="margin-top:12px">Baseline pressure is multiplied by service count: five pools with <code>poolMin=5</code> create about 25 mostly idle dedicated sessions in this ADB PRO demo configuration.</p>
+        </div>
+        <div class="card" style="box-shadow:none;background:var(--redwood-warm)">
+          <div class="panel-title">DRCP: many services -> shared resident pool</div>
+          <div style="border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff;padding:14px;margin-top:10px">
+            <div class="panel-title" style="justify-content:center">Oracle Database Resident Connection Pool</div>
+            <div class="grid cols-3" style="margin-top:10px">
+              <span class="badge">CATALOG class</span>
+              <span class="badge">INVENTORY class</span>
+              <span class="badge">ORDERS class</span>
+              <span class="badge">PAYMENTS class</span>
+              <span class="badge">CUSTOMERS class</span>
+            </div>
+          </div>
+          <p class="panel-sub" style="margin-top:12px">Services authenticate separately and request their own connection class, but they reuse database-resident pooled servers instead of each service reserving idle dedicated sessions.</p>
+        </div>
+      </div>
+      <div class="grid cols-2" style="margin-top:14px">
+        <pre>Traditional
+
+Catalog   -> Dedicated Session
+Inventory -> Dedicated Session
+Orders    -> Dedicated Session
+Payments  -> Dedicated Session
+Customers -> Dedicated Session
+
+Idle sessions multiply by service count.</pre>
+        <pre>Oracle DRCP
+
+Catalog
+Inventory
+Orders       -> Shared Resident Pool -> Oracle Database
+Payments
+Customers
+
+Resident servers are reused across services.</pre>
+      </div>
+    </section>
+
+    <section class="grid cols-2" style="margin-top:16px">
+      <div class="card">
+        <div class="panel-title">What DRCP Is Doing</div>
+        <p>DRCP moves reusable server processes into Oracle Database. The client tier borrows from that resident pool using the pooled TNS alias, so the database can serve many mid-tier processes with fewer open server processes.</p>
+        <pre>traditional alias -> dedicated database sessions
+pooled alias      -> SERVER=POOLED database sessions
+resident pool     -> reusable database server processes
+
+traditional proof -> V$SESSION.SERVER = DEDICATED
+DRCP proof        -> V$CPOOL_STATS, V$CPOOL_CONN_INFO,
+                    V$CPOOL_CC_INFO, V$SESSION fallback</pre>
+      </div>
+      <div class="card">
+        <div class="panel-title">Why Connection Classes Matter</div>
+        <p>Connection classes keep reuse aligned with the service that requested the session. Catalog, inventory, orders, payments, and customers share the resident pool infrastructure, but each class can preserve the right reuse boundary and attribution.</p>
+        <pre>DRCP_DEMO_CATALOG
+DRCP_DEMO_INVENTORY
+DRCP_DEMO_ORDERS
+DRCP_DEMO_PAYMENTS
+DRCP_DEMO_CUSTOMERS
+
+client sizing   -> DRCP_POOL_MIN=0 avoids per-service minimum idle sessions
+dashboard count -> V$CPOOL_STATS or V$SESSION.SERVER = POOLED</pre>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <div class="panel-title">Configuration Used by the Demo</div>
+      <pre>DB_DRIVER=oracledb
+ORACLE_CLIENT_MODE=thick
+DEMO_CONNECT_STRING=YOUR_ADB_TP_ALIAS
+DEMO_DRCP_CONNECT_STRING=YOUR_ADB_TP_POOLED_ALIAS
+DEMO_TNS_ADMIN=/absolute/path/to/your/wallet_directory
+TRADITIONAL_POOL_MIN=5
+TRADITIONAL_POOL_MAX=8
+DRCP_POOL_MIN=0
+DRCP_POOL_MAX=8
+DRCP_RESIDENT_MIN=2
+DRCP_RESIDENT_MAX=8
+BENCHMARK_WARMUP_SECONDS=10
+BENCHMARK_DURATION_SECONDS=45
+BENCHMARK_CONCURRENCY=6
+BENCHMARK_REQUEST_DELAY_MS=100
+BENCHMARK_WARMUP_DELAY_MS=250
+APPLICATION_CONNECTION_BUDGET=20
+
+traditional -> node-oracledb pool + normal TNS alias
+drcp        -> node-oracledb pool + pooled TNS alias + connectionClass
+workload    -> same interleaved weighted service mix in both modes</pre>
+    </section>
+
+    <section class="grid cols-3" style="margin-top:16px">
+      <div class="card"><div class="panel-title">Connection Classes</div><p>One class per service keeps reuse organized. Services share the resident pool, but catalog, orders, payments, inventory, and customers still get clear reuse boundaries.</p></div>
+      <div class="card"><div class="panel-title">Connection Tagging</div><p>Tags describe reusable session state such as service, region, and role. A matching tag avoids unnecessary session setup work on the next checkout.</p></div>
+      <div class="card"><div class="panel-title">Session Purity</div><p><strong>POOLED</strong> favors fast reuse. <strong>NEW</strong> asks Oracle for cleaner state when strict isolation is more important than maximum reuse.</p></div>
+      <div class="card"><div class="panel-title">Session State Fix-up</div><p>After checkout, the backend sets module, action, client identifier, and the requested tag. This keeps dashboard attribution clear without relying on a pool callback.</p></div>
+      <div class="card"><div class="panel-title">Monitoring</div><p>The dashboard uses <code>V$SESSION.SERVER = DEDICATED</code> for traditional sessions and <code>V$CPOOL_STATS.NUM_OPEN_SERVERS</code> for DRCP open servers when available. If the DRCP pool view returns no rows, it falls back to <code>V$SESSION.SERVER = POOLED</code>.</p></div>
+      <div class="card"><div class="panel-title">Service Isolation</div><p>Each service connects only to its own schema. Cross-service consistency is maintained through shared business IDs, not cross-schema table access.</p></div>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <div class="panel-title">What to Compare During the Demo</div>
+      <table>
+        <tr><th>Dashboard field</th><th>What it means</th><th>Expected reading</th></tr>
+        <tr><td><code>Traditional current</code></td><td>Open database sessions for the five service schemas where <code>SERVER=DEDICATED</code>.</td><td>Higher when normal client-side pools are active.</td></tr>
+        <tr><td><code>DRCP current</code></td><td>Open DRCP database servers from <code>V$CPOOL_STATS.NUM_OPEN_SERVERS</code> when visible; otherwise <code>SERVER=POOLED</code> fallback.</td><td>Shows idle and active DRCP open-server footprint, not just active service-schema work.</td></tr>
+        <tr><td><code>Connection reuse ratio</code></td><td><code>V$CPOOL_STATS.NUM_HITS / NUM_REQUESTS</code> when the aggregate pool view exposes counters.</td><td>Shows whether requests reuse existing resident pooled servers.</td></tr>
+        <tr><td><code>Oracle Evidence</code></td><td>Compact live result sets from <code>V$SESSION</code>, <code>V$CPOOL_STATS</code>, <code>V$CPOOL_CONN_INFO</code>, and <code>V$CPOOL_CC_INFO</code>.</td><td>Use this panel to prove the dashboard is reading Oracle Database, not app-side estimates.</td></tr>
+        <tr><td><code>Observed reduction</code></td><td>Reduction calculated from the highest traditional footprint seen on the page versus the highest DRCP footprint seen on the page.</td><td>Useful after running comparable load in both modes.</td></tr>
+        <tr><td><code>Live footprint</code></td><td>Per-service view of active, idle, dedicated, and pooled sessions.</td><td>Shows which service is consuming sessions at that moment.</td></tr>
+      </table>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <div class="panel-title">Runtime Code Shape</div>
+      <pre>pool.getConnection({
+  connectionClass: mode === 'drcp' ? svc.connectionClass : undefined,
+  tag: mode === 'drcp' ? requestedTag : undefined,
+  matchAnyTag: mode === 'drcp',
+  purity: mode === 'drcp' ? PURITY_SELF or PURITY_NEW : undefined
+})
+
+applySessionFixup(connection, {
+  module: `DRCP Demo ${service}`,
+  action: mode,
+  clientIdentifier: `${service}:${mode}`,
+  tag: requestedTag
+})</pre>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <div class="panel-title">Relevant Files</div>
+      <table>
+        <tr><th>File</th><th>Purpose</th></tr>
+        <tr><td><code>backend/src/db/pools.js</code></td><td>Oracle Client Thick initialization, traditional vs DRCP pool creation, connection classes, tags, purity, and explicit fix-up</td></tr>
+        <tr><td><code>backend/src/db/monitoring.js</code></td><td>Consumes ORDS monitoring endpoints that feed the live connection footprint and comparison totals</td></tr>
+        <tr><td><code>backend/src/load/engine.js</code></td><td>Backend load generation across the five services</td></tr>
+        <tr><td><code>config/demo.env</code></td><td>Runtime driver, Thick mode, wallet path, traditional TNS alias, and pooled TNS alias</td></tr>
+        <tr><td><code>config/services.json</code></td><td>Schema, service user, connection class, default tag, and service query per service</td></tr>
+        <tr><td><code>sql/30_admin_drcp_monitoring.sql</code></td><td>Oracle DRCP monitoring view queries</td></tr>
+        <tr><td><code>sql/31_live_connection_footprint.sql</code></td><td>Live session footprint query grouped by service schema and server type</td></tr>
+      </table>
+    </section>
+
+    <div class="footer">Created by <strong>Anonymous</strong></div>
+  </main>
+  <!-- ═══ ORACLE DEMO RUNTIME v7.4 — do not modify ════════════════════════ -->
+  <script
+    async
+    src="https://objectstorage.us-ashburn-1.oraclecloud.com/p/6qf7jK9XUFAjQqkgARIMisRfuQ8QLnS7pGGWLHD3bqTBe-M6X4NY5REw-Gs2iVk0/n/oraclepartnersas/b/vibecode/o/oracle-demo-runtime.js?skill=oracle-database-demos"
+    data-vertical="retail-operations"
+    data-features="drcp,connection-classes,connection-tagging,session-purity,session-fixup"
+    data-builtat="2026-06-29T11:44:03Z"
+    data-filename="how-oracle-solves-it.html"
+    data-heading="Oracle DRCP Architecture"
+    data-prompt="Build an Oracle DRCP demo with five services, schemas, REST APIs, load generator, dashboard, and explanatory pages."
+    data-creator="Anonymous"
+    data-chatsid="drcp0629a"
+    data-skill-version="7.4">
+  </script>
+  <!-- ═══ END ORACLE DEMO RUNTIME ═════════════════════════════════════════ -->
+</body>
+</html>

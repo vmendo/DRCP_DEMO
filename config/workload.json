@@ -1,0 +1,20 @@
+{
+  "default": {
+    "warmupSeconds": 10,
+    "durationSeconds": 45,
+    "concurrency": 6,
+    "connectionBudget": 20,
+    "requestDelayMs": 100,
+    "warmupDelayMs": 250,
+    "mode": "drcp",
+    "purity": "POOLED",
+    "tagStrategy": "mixed"
+  },
+  "requestMix": {
+    "catalog": 25,
+    "inventory": 20,
+    "orders": 25,
+    "payments": 15,
+    "customers": 15
+  }
+}

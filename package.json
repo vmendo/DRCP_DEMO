@@ -1,0 +1,15 @@
+{
+  "name": "oracle-drcp-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Oracle DRCP demo comparing traditional client pools with Database Resident Connection Pooling.",
+  "main": "backend/src/server.js",
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "load": "node backend/src/load/generator.js",
+    "verify": "node backend/src/verifyConfig.js"
+  },
+  "dependencies": {
+    "oracledb": "^6.9.0"
+  }
+}

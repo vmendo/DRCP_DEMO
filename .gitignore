@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Runtime configuration and secrets
+config/demo.env
+config/*.local.env
+.env
+.env.*
+!.env.example
+
+# Oracle wallets and credential material
+wallet/*
+!wallet/README.md
+*.sso
+*.p12
+*.pem
+*.key
+*.jks
+*.wallet
+*.zip
+
+# Logs and runtime state
+logs/
+*.log
+*.pid
+
+# Generated benchmark diagnostics
+pool_testing/results/
+pool_testing/reports/
+pool_testing/config.local.env
+
+# Prompt/development artifacts
+prompt/
+
+# Build, coverage, and temporary output
+dist/
+build/
+coverage/
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

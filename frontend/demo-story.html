@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DRCP Demo Story and Runbook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .story-hero { background:var(--redwood-sand); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+    .story-steps { counter-reset:demo-step; display:grid; gap:14px; }
+    .story-step { position:relative; padding-left:54px; }
+    .story-step:before { counter-increment:demo-step; content:counter(demo-step); position:absolute; left:16px; top:16px; width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; }
+    .callout { border-left:4px solid var(--accent-teal); background:#f7fbfb; padding:12px 14px; border-radius:var(--radius); color:var(--text-secondary); line-height:1.55; }
+    .warning { border-left-color:var(--accent); background:var(--redwood-warm); }
+    .checklist { margin:8px 0 0; padding-left:18px; color:var(--text-secondary); line-height:1.7; }
+    .flow-table td:first-child { width:190px; font-weight:700; color:var(--text-primary); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-grid">
+      <div>
+        <h1>DRCP Demo Story and Runbook</h1>
+        <div class="sub">Presenter flow for proving the connection footprint difference between traditional client-side pools and Oracle Database Resident Connection Pooling.</div>
+      </div>
+      <div><a class="badge" href="/">Back to Benchmark</a></div>
+    </div>
+  </header>
+  <nav>
+    <div class="nav-inner">
+      <a href="/">Benchmark</a>
+      <button class="active">Demo Story</button>
+      <a href="/demo-components.html">Demo Components</a>
+      <a href="/how-oracle-solves-it.html">Architecture</a>
+    </div>
+  </nav>
+  <main>
+    <section class="story-hero">
+      <div class="panel-title">Demo Objective</div>
+      <p>The story is simple: run the same five-service workload twice. First start the application in traditional client-side pooling mode, where each service initializes its own dedicated database sessions according to <code>poolMin</code>. Then restart the application in DRCP mode, where services avoid per-service minimum idle sessions and borrow database-resident pooled servers. The proof is the dashboard's live database footprint: <code>V$SESSION.SERVER = DEDICATED</code> for traditional mode versus <code>V$CPOOL_STATS.NUM_OPEN_SERVERS</code> for DRCP when available.</p>
+      <div class="callout warning">The comparison is meaningful only when the same workload parameters are used in both runs: same concurrency, duration, and service mix. Each benchmark run is persisted in Oracle Database, so the Results tab can compare runs even after restarting the application.</div>
+    </section>
+
+    <section class="grid cols-3" style="margin-top:16px">
+      <div class="card kpi"><div class="label">Services</div><div class="value">5</div><div class="panel-sub">catalog, inventory, orders, payments, customers</div></div>
+      <div class="card kpi"><div class="label">Traditional signal</div><div class="value">DEDICATED</div><div class="panel-sub">One client-side pool per service schema, min 5 / max 8</div></div>
+      <div class="card kpi"><div class="label">DRCP signal</div><div class="value">POOLED</div><div class="panel-sub">Shared database-resident pool, client min 0</div></div>
+    </section>
+
+    <section class="grid cols-2" style="margin-top:16px">
+      <div class="card">
+        <div class="panel-title">Before You Start</div>
+        <ul class="checklist">
+          <li>Open the <a href="/">Benchmark</a> page and confirm that the current application mode is shown at the top.</li>
+          <li>Check that <code>Database footprint</code> and <code>Reserved vs Actually Used</code> are updating.</li>
+          <li>Use the same <code>Concurrency</code>, measured duration, warm-up, and weighted service mix for both runs.</li>
+          <li>Recommended baseline: <code>Warm-up=10s</code>, <code>Concurrency=6</code>, <code>Measured duration=45s</code>.</li>
+          <li>Traditional pools are configured with <code>TRADITIONAL_POOL_MIN=5</code> and <code>TRADITIONAL_POOL_MAX=8</code> for the validated ADB PRO demo environment.</li>
+          <li>DRCP client pools are configured with <code>DRCP_POOL_MIN=0</code> and <code>DRCP_POOL_MAX=8</code>; the shared database-resident pool uses <code>DRCP_RESIDENT_MIN=2</code> and <code>DRCP_RESIDENT_MAX=8</code>.</li>
+          <li>The application connection budget is <code>20</code> sessions. It is a workload guardrail, not the initial Traditional pool footprint or the Oracle Database maximum.</li>
+          <li>Stop any prior load run and wait a few seconds for the live session table to settle.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="panel-title">Dashboard Areas to Keep Visible</div>
+        <table>
+          <tr><th>Area</th><th>Why it matters</th></tr>
+          <tr><td><code>Current application mode</code></td><td>Confirms whether the backend was started in Traditional or DRCP mode.</td></tr>
+          <tr><td><code>Database footprint</code></td><td>Current dedicated sessions for Traditional, or current resident/open pooled servers for DRCP.</td></tr>
+          <tr><td><code>Reserved vs Actually Used</code></td><td>Shows idle dedicated sessions in Traditional and reusable resident servers in DRCP.</td></tr>
+          <tr><td><code>Results</code></td><td>Compares persisted Traditional and DRCP runs from Oracle Database.</td></tr>
+          <tr><td><code>Oracle Evidence</code></td><td>Shows the V$ view evidence behind the numbers.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="story-steps" style="margin-top:16px">
+      <div class="card story-step">
+        <div class="panel-title">Run 1: Traditional Client Pools</div>
+        <table class="flow-table">
+          <tr><td>Start application mode</td><td>Run <code>./run.sh</code> or <code>./run.sh --mode traditional</code>, then refresh the page.</td></tr>
+          <tr><td>DRCP controls</td><td><code>Session purity</code> and <code>Tag strategy</code> are disabled because they do not apply to traditional dedicated sessions.</td></tr>
+          <tr><td>Set workload</td><td>Use the agreed baseline: <code>Warm-up=10s</code>, <code>Concurrency=6</code>, and <code>Measured duration=45s</code>. The backend interleaves the weighted service mix so the benchmark represents normal multi-service traffic instead of artificial bursts against one schema. Concurrency 6 is the stable ADB demo profile; concurrency 12 caused service-call timeouts in this environment.</td></tr>
+          <tr><td>Action</td><td>Click <code>Start Benchmark</code> and watch the Benchmark page while requests are running.</td></tr>
+          <tr><td>Evidence</td><td><code>Database footprint</code> should show dedicated sessions. Because each of the five service pools has <code>poolMin=5</code>, initializing every service should make the dedicated footprint settle near 25 sessions before high concurrency is reached.</td></tr>
+        </table>
+        <div class="callout">Presenter line: "This is the common microservice pattern. Every service owns its own client-side pool. With min size 5 in this ADB PRO demo, five initialized service pools reserve about 25 dedicated database sessions before real concurrency needs them."</div>
+      </div>
+
+      <div class="card story-step">
+        <div class="panel-title">Stabilize the Baseline</div>
+        <table class="flow-table">
+          <tr><td>Action</td><td>Let the traditional run finish, or click <code>Stop</code> if needed.</td></tr>
+          <tr><td>Persisted result</td><td>The backend writes the run and samples into Oracle benchmark tables automatically.</td></tr>
+          <tr><td>What to note</td><td>Open the <code>Results</code> tab and confirm the Traditional run appears as <code>COMPLETED</code>.</td></tr>
+        </table>
+      </div>
+
+      <div class="card story-step">
+        <div class="panel-title">Run 2: DRCP</div>
+        <table class="flow-table">
+          <tr><td>Start application mode</td><td>Stop the application, run <code>./run.sh DRCP</code>, then refresh the page.</td></tr>
+          <tr><td>DRCP controls</td><td>Use <code>Session purity=POOLED</code> and <code>Tag strategy=Mixed tags</code> for the first comparison. These controls are now meaningful because the backend uses DRCP checkout attributes.</td></tr>
+          <tr><td>Same workload</td><td>Use exactly the same <code>Warm-up</code>, <code>Concurrency</code>, measured duration, and service mix as the traditional run.</td></tr>
+          <tr><td>Action</td><td>Click <code>Start Benchmark</code>.</td></tr>
+          <tr><td>Evidence</td><td><code>Database footprint</code> should reflect open pooled database servers, not five separate client-side minimum pools. The important difference is that DRCP shares reusable database-resident pooled servers.</td></tr>
+        </table>
+        <div class="callout">Presenter line: "The service schemas are still isolated, but they now use a pooled TNS alias with SERVER=POOLED. Oracle reuses database-resident pooled servers instead of requiring each service pool to hold dedicated server processes."</div>
+      </div>
+
+      <div class="card story-step">
+        <div class="panel-title">Read the Result</div>
+        <table>
+          <tr><th>Question</th><th>Where to verify</th><th>Expected interpretation</th></tr>
+          <tr><td>Did traditional use dedicated sessions?</td><td><code>Oracle Evidence</code>, <code>V$SESSION</code>, and the Traditional row in <code>Results</code>.</td><td>Yes, traditional load appears as <code>DEDICATED</code> sessions.</td></tr>
+          <tr><td>Did DRCP use pooled database servers?</td><td><code>Oracle Evidence</code>, DRCP result row, and <code>V$CPOOL_STATS</code>.</td><td>Yes, DRCP open servers are read from <code>V$CPOOL_STATS</code> when the database exposes that view.</td></tr>
+          <tr><td>Did DRCP reduce the footprint?</td><td><code>Results</code> executive summary and comparison charts.</td><td>DRCP should show a lower peak database session footprint for comparable load.</td></tr>
+          <tr><td>Which services consumed sessions?</td><td><code>Live Database Connection Footprint</code>.</td><td>The table maps sessions back to <code>DRCP_CATALOG</code>, <code>DRCP_INVENTORY</code>, <code>DRCP_ORDERS</code>, <code>DRCP_PAYMENTS</code>, and <code>DRCP_CUSTOMERS</code>.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid cols-2" style="margin-top:16px">
+      <div class="card">
+        <div class="panel-title">Why DRCP Should Use Fewer Connections</div>
+        <p>Traditional mode creates one node-oracledb pool per service: min 5 and max 8. With five services, that means 25 idle dedicated database sessions after pool initialization and up to 40 client-side capacity. DRCP mode avoids that per-service minimum idle footprint by using <code>DRCP_POOL_MIN=0</code> in the client tier and attaching requests through a pooled TNS alias to database-resident pooled servers configured with the conservative 2/8 sizing idea. The comparison is about idle/open database footprint and server-process reuse, not database saturation.</p>
+        <pre>Traditional path:
+5 service pools x poolMin 5 -> 25 dedicated sessions
+5 service pools x poolMax 8 -> up to 40 client-side capacity
+application connection budget -> 20 sessions as a presentation aid
+
+DRCP path:
+5 service pools x client poolMin 0 -> no per-service minimum idle sessions
+shared database-resident pool -> reusable pooled database servers</pre>
+      </div>
+      <div class="card">
+        <div class="panel-title">If the Reduction Is Not Obvious</div>
+        <ul class="checklist">
+          <li>Confirm both runs used the same warm-up, concurrency, measured duration, and service mix.</li>
+          <li>Confirm the dashboard stayed open from the traditional run through the DRCP run.</li>
+          <li>Run traditional first, then DRCP. The comparison table is designed for that story.</li>
+          <li>Wait a few refresh cycles; metrics are sampled periodically from the database.</li>
+          <li>Check the <code>Recent Requests</code> table to confirm the active mode.</li>
+          <li>Remember that existing idle pooled sessions may remain visible; compare peaks under load, not just a single idle sample.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <div class="panel-title">Why DRCP Current Comes From V$CPOOL_STATS</div>
+      <p><code>DRCP_POOL_MIN=0</code> is the client-side choice that avoids recreating the traditional idle footprint in Node. The database-side DRCP pool has its own shared open-server footprint. The dashboard reads <code>V$CPOOL_STATS.NUM_OPEN_SERVERS</code> for <code>DRCP current</code> when available. If <code>V$CPOOL_STATS</code> is not visible in this Autonomous Database environment, the dashboard falls back to <code>V$SESSION.SERVER = POOLED</code>, which is less complete for idle/open DRCP capacity.</p>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <div class="panel-title">One-Minute Talk Track</div>
+      <p>"We start with the traditional model. Each retail service has an isolated schema and its own client-side connection pool. We configured min 5, max 8 per service for this ADB PRO demo, so initializing five service pools creates about 25 idle dedicated database sessions before the workload needs them. Now we switch to DRCP. The services are still isolated, but the client tier does not reserve minimum idle sessions per service; requests use reusable pooled database servers inside Oracle. The dashboard proves the change from database views: traditional is counted from <code>V$SESSION</code> dedicated sessions, while DRCP current is counted from <code>V$CPOOL_STATS.NUM_OPEN_SERVERS</code> when visible."</p>
+    </section>
+
+    <div class="footer">Created by <strong>Anonymous</strong></div>
+  </main>
+  <!-- ═══ ORACLE DEMO RUNTIME v7.4 — do not modify ════════════════════════ -->
+  <script
+    async
+    src="https://objectstorage.us-ashburn-1.oraclecloud.com/p/6qf7jK9XUFAjQqkgARIMisRfuQ8QLnS7pGGWLHD3bqTBe-M6X4NY5REw-Gs2iVk0/n/oraclepartnersas/b/vibecode/o/oracle-demo-runtime.js?skill=oracle-database-demos"
+    data-vertical="retail-operations"
+    data-features="drcp,connection-classes,connection-tagging,session-purity,session-fixup,connection-pooling"
+    data-builtat="2026-06-29T18:05:00Z"
+    data-filename="demo-story.html"
+    data-heading="DRCP Demo Story and Runbook"
+    data-prompt="Create a linked HTML page with the DRCP demo story, how to execute traditional first then DRCP, and where to look to verify connection reduction."
+    data-creator="Anonymous"
+    data-chatsid="drcp0629a"
+    data-skill-version="7.4">
+  </script>
+  <!-- ═══ END ORACLE DEMO RUNTIME ═════════════════════════════════════════ -->
+</body>
+</html>

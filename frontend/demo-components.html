@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DRCP Demo Components</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .component-map { position:relative; margin-top:16px; padding:18px; background:var(--redwood-sand); border:1px solid var(--border); border-radius:var(--radius); overflow:auto; }
+    .component-svg { min-width:1120px; width:100%; height:760px; display:block; }
+    .node rect { fill:#fff; stroke:#d0c8c0; stroke-width:1.5; rx:8; }
+    .node.primary rect { fill:#fdf6ee; stroke:#C74634; stroke-width:2; }
+    .node.database rect { fill:#f7fbfb; stroke:#007b6e; stroke-width:2; }
+    .node.runtime rect { fill:#f7f8fb; stroke:#0062a3; stroke-width:2; }
+    .node text { font-family:var(--font-ui); fill:#312d2a; }
+    .node .title { font-weight:700; font-size:15px; }
+    .node .meta { font-size:11px; fill:#6b6460; }
+    .node .mono { font-family:var(--font-mono); font-size:10px; fill:#6b6460; }
+    .flow { fill:none; stroke:#8f8880; stroke-width:2; marker-end:url(#arrow); }
+    .flow.accent { stroke:#C74634; stroke-width:2.5; }
+    .flow.db { stroke:#007b6e; stroke-width:2.5; }
+    .flow.admin { stroke:#0062a3; stroke-dasharray:5 5; }
+    .flow-label { font-size:10px; fill:#6b6460; font-family:var(--font-ui); font-weight:700; }
+    .legend-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+    .legend-chip { background:#fff; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:12px; color:var(--text-secondary); }
+    .mini-list { margin:10px 0 0; padding-left:18px; color:var(--text-secondary); line-height:1.7; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-grid">
+      <div>
+        <h1>DRCP Demo Component Diagram</h1>
+        <div class="sub">Concrete implementation map for this demo: browser pages, Node backend, node-oracledb Thick pools, ORDS service plane, Oracle DRCP, live database metrics, and the five isolated service schemas.</div>
+      </div>
+      <div><a class="badge" href="/">Back to Benchmark</a></div>
+    </div>
+  </header>
+  <nav>
+    <div class="nav-inner">
+      <a href="/">Benchmark</a>
+      <a href="/demo-story.html">Demo Story</a>
+      <button class="active">Demo Components</button>
+      <a href="/how-oracle-solves-it.html">Architecture</a>
+    </div>
+  </nav>
+  <main>
+    <section class="grid cols-3">
+      <div class="card kpi"><div class="label">Frontend pages</div><div class="value">4</div></div>
+      <div class="card kpi"><div class="label">Service schemas</div><div class="value">5</div></div>
+      <div class="card kpi"><div class="label">Runtime driver</div><div class="value">oracledb</div></div>
+    </section>
+
+    <section class="component-map">
+      <svg class="component-svg" viewBox="0 0 1120 760" role="img" aria-label="DRCP demo component diagram">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#8f8880"></path>
+          </marker>
+        </defs>
+
+        <g class="node primary" transform="translate(40 54)">
+          <rect width="230" height="118"></rect>
+          <text class="title" x="18" y="30">Browser UI</text>
+          <text class="meta" x="18" y="55">/index.html</text>
+          <text class="meta" x="18" y="74">/demo-story.html</text>
+          <text class="meta" x="18" y="93">/demo-components.html</text>
+          <text class="meta" x="18" y="112">Architecture tab / how-oracle-solves-it.html</text>
+        </g>
+
+        <g class="node runtime" transform="translate(410 44)">
+          <rect width="300" height="142"></rect>
+          <text class="title" x="18" y="30">Node Backend</text>
+          <text class="meta" x="18" y="55">backend/src/server.js</text>
+          <text class="meta" x="18" y="76">REST API, static files, ORDS proxy</text>
+          <text class="mono" x="18" y="101">GET /api/service/:name</text>
+          <text class="mono" x="18" y="120">POST /api/load/start</text>
+        </g>
+
+        <g class="node runtime" transform="translate(410 244)">
+          <rect width="300" height="132"></rect>
+          <text class="title" x="18" y="30">Backend Load Engine</text>
+          <text class="meta" x="18" y="55">backend/src/load/engine.js</text>
+          <text class="meta" x="18" y="76">Generates server-side workload</text>
+          <text class="mono" x="18" y="101">mode: traditional | drcp</text>
+          <text class="mono" x="18" y="118">purity: POOLED | NEW</text>
+        </g>
+
+        <g class="node runtime" transform="translate(40 244)">
+          <rect width="230" height="132"></rect>
+          <text class="title" x="18" y="30">ORDS / ADB Service Plane</text>
+          <text class="meta" x="18" y="55">Autonomous Database ORDS</text>
+          <text class="meta" x="18" y="76">Read-only dashboard evidence</text>
+          <text class="mono" x="18" y="101">/ords/admin/drcp-demo/dashboard</text>
+        </g>
+
+        <g class="node" transform="translate(778 54)">
+          <rect width="292" height="132"></rect>
+          <text class="title" x="18" y="30">Connection Configuration</text>
+          <text class="meta" x="18" y="55">config/services.json</text>
+          <text class="meta" x="18" y="76">One schema + connection class per service</text>
+          <text class="mono" x="18" y="101">DB_DRIVER=oracledb</text>
+          <text class="mono" x="18" y="118">DEMO_DRCP_CONNECT_STRING=YOUR_ADB_TP_POOLED_ALIAS</text>
+        </g>
+
+        <g class="node runtime" transform="translate(778 244)">
+          <rect width="292" height="132"></rect>
+          <text class="title" x="18" y="30">node-oracledb Pool Adapter</text>
+          <text class="meta" x="18" y="55">backend/src/db/pools.js</text>
+          <text class="meta" x="18" y="76">Creates pools for the active startup mode</text>
+          <text class="mono" x="18" y="101">Thick mode + wallet TNS_ADMIN</text>
+          <text class="mono" x="18" y="118">No ADMIN connection for dashboard</text>
+        </g>
+
+        <g class="node database" transform="translate(370 468)">
+          <rect width="390" height="132"></rect>
+          <text class="title" x="18" y="30">Oracle Database DRCP Layer</text>
+          <text class="meta" x="18" y="55">Database Resident Connection Pool</text>
+          <text class="meta" x="18" y="76">Shared infrastructure with service isolation</text>
+          <text class="mono" x="18" y="101">Connection classes, tags, purity, fix-up</text>
+          <text class="mono" x="18" y="118">V$SESSION + V$CPOOL_STATS</text>
+        </g>
+
+        <g class="node database" transform="translate(40 650)">
+          <rect width="190" height="76"></rect>
+          <text class="title" x="16" y="28">DRCP_CATALOG</text>
+          <text class="mono" x="16" y="51">Products, categories, prices</text>
+        </g>
+        <g class="node database" transform="translate(254 650)">
+          <rect width="190" height="76"></rect>
+          <text class="title" x="16" y="28">DRCP_INVENTORY</text>
+          <text class="mono" x="16" y="51">Warehouses, stock</text>
+        </g>
+        <g class="node database" transform="translate(468 650)">
+          <rect width="190" height="76"></rect>
+          <text class="title" x="16" y="28">DRCP_ORDERS</text>
+          <text class="mono" x="16" y="51">Orders, lines, events</text>
+        </g>
+        <g class="node database" transform="translate(682 650)">
+          <rect width="190" height="76"></rect>
+          <text class="title" x="16" y="28">DRCP_PAYMENTS</text>
+          <text class="mono" x="16" y="51">Methods, auths, events</text>
+        </g>
+        <g class="node database" transform="translate(896 650)">
+          <rect width="190" height="76"></rect>
+          <text class="title" x="16" y="28">DRCP_CUSTOMERS</text>
+          <text class="mono" x="16" y="51">Customers, segments</text>
+        </g>
+
+        <path class="flow accent" d="M270 112 C330 112 350 112 410 112"></path>
+        <text class="flow-label" x="300" y="98">REST calls</text>
+        <path class="flow" d="M560 186 L560 244"></path>
+        <text class="flow-label" x="574" y="220">starts load</text>
+        <path class="flow admin" d="M270 306 C320 360 332 432 430 468"></path>
+        <text class="flow-label" x="220" y="410">ORDS metrics JSON</text>
+        <path class="flow" d="M710 112 C742 112 746 112 778 112"></path>
+        <text class="flow-label" x="714" y="98">reads config</text>
+        <path class="flow" d="M710 306 C742 306 746 306 778 306"></path>
+        <text class="flow-label" x="714" y="292">service request</text>
+        <path class="flow db" d="M924 376 C924 450 760 468 702 468"></path>
+        <text class="flow-label" x="795" y="440">database sessions</text>
+        <path class="flow db" d="M565 600 L565 650"></path>
+        <path class="flow db" d="M565 600 C160 600 135 632 135 650"></path>
+        <path class="flow db" d="M565 600 C355 600 349 632 349 650"></path>
+        <path class="flow db" d="M565 600 C775 600 777 632 777 650"></path>
+        <path class="flow db" d="M565 600 C985 600 991 632 991 650"></path>
+      </svg>
+    </section>
+
+    <section class="grid cols-2" style="margin-top:16px">
+      <div class="card">
+        <div class="panel-title">Runtime Path</div>
+        <ol class="mini-list">
+          <li>The browser calls the Node backend only; it never generates database load directly.</li>
+          <li>The backend routes service requests through <code>backend/src/services.js</code>.</li>
+          <li><code>DB_DRIVER=oracledb</code> uses Oracle Client Thick mode with the user's Autonomous Database wallet directory.</li>
+          <li>Traditional mode connects through <code>DEMO_CONNECT_STRING=YOUR_ADB_TP_ALIAS</code> and creates normal client-side pools with <code>min=5</code> and <code>max=8</code> per service.</li>
+          <li>DRCP mode connects through <code>DEMO_DRCP_CONNECT_STRING=YOUR_ADB_TP_POOLED_ALIAS</code>, whose TNS entry includes <code>SERVER=POOLED</code>; client pools use <code>min=0</code> while the shared resident pool is documented as <code>min=2</code> and <code>max=8</code>.</li>
+          <li>The mode is fixed at process startup. The UI reads it from the backend and never switches datasource configuration from the browser.</li>
+          <li>ORDS exposes read-only dashboard evidence from Oracle monitoring views. Node proxies those endpoints so the browser avoids CORS and credentials.</li>
+          <li>The load path still uses Node plus Oracle Net to show DRCP behavior directly; ORDS is not used to generate service workload.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <div class="panel-title">DRCP Features Represented</div>
+        <ul class="mini-list">
+          <li>Connection classes: one per service in <code>config/services.json</code>.</li>
+          <li>Session tags: service, region, and role tags generated by the load engine.</li>
+          <li>Session purity: UI switch for <code>POOLED</code> and <code>NEW</code> request behavior.</li>
+          <li>Session fix-up: after checkout, the backend sets module, action, client identifier, and the connection tag.</li>
+          <li>Monitoring: <code>backend/src/db/monitoring.js</code> consumes ORDS endpoints from <code>ORDS_METRICS_BASE_URL</code>. SQLcl/JDBC admin access is only a fallback path.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="grid cols-2" style="margin-top:16px">
+      <div class="card">
+        <div class="panel-title">Application REST Endpoints</div>
+        <table>
+          <tr><th>Endpoint</th><th>Owner</th><th>Purpose</th></tr>
+          <tr><td><code>GET /api/services</code></td><td>Node</td><td>Service/schema metadata for the UI.</td></tr>
+          <tr><td><code>GET /api/runtime/configuration</code></td><td>Node</td><td>Authoritative active execution mode and datasource configuration.</td></tr>
+          <tr><td><code>GET /api/runtime/configuration/diff</code></td><td>Node</td><td>Side-by-side Traditional versus DRCP effective configuration.</td></tr>
+          <tr><td><code>GET /api/runtime-config</code></td><td>Node</td><td>Legacy compatibility endpoint for pool sizing and mode labels.</td></tr>
+          <tr><td><code>GET /api/metrics</code></td><td>Node</td><td>Application/load-generator counters.</td></tr>
+          <tr><td><code>GET /api/pool-metrics</code></td><td>Node proxy</td><td>Dashboard Oracle evidence, sourced from ORDS.</td></tr>
+          <tr><td><code>POST /api/load/start</code></td><td>Node</td><td>Starts backend-generated load.</td></tr>
+          <tr><td><code>POST /api/load/stop</code></td><td>Node</td><td>Stops backend-generated load.</td></tr>
+          <tr><td><code>POST /api/pools/initialize</code></td><td>Node</td><td>Creates configured client pools without issuing business requests or artificial checkouts.</td></tr>
+          <tr><td><code>GET /api/service/:name</code></td><td>Node</td><td>Runs one service query through traditional or DRCP pooling.</td></tr>
+          <tr><td><code>GET /api/benchmark/runs</code></td><td>Node</td><td>Reads persisted benchmark run history from Oracle Database.</td></tr>
+          <tr><td><code>GET /api/benchmark/runs/:id/samples</code></td><td>Node</td><td>Reads persisted sample history for result charts.</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="panel-title">ORDS REST Endpoints</div>
+        <table>
+          <tr><th>Endpoint</th><th>Oracle source</th><th>Purpose</th></tr>
+          <tr><td><code>/ords/admin/drcp-demo/dashboard/pool-metrics</code></td><td>V$ views</td><td>Aggregated JSON for the dashboard.</td></tr>
+          <tr><td><code>/ords/admin/drcp-demo/dashboard/session-footprint</code></td><td><code>V$SESSION</code></td><td>Dedicated/pooled sessions by service schema.</td></tr>
+          <tr><td><code>/ords/admin/drcp-demo/dashboard/cpool-stats</code></td><td><code>V$CPOOL_STATS</code></td><td>DRCP open/busy/request/hit counters when exposed.</td></tr>
+          <tr><td><code>/ords/admin/drcp-demo/dashboard/cpool-cc-stats</code></td><td><code>V$CPOOL_CC_STATS</code></td><td>Connection-class request counters.</td></tr>
+          <tr><td><code>/ords/admin/drcp-demo/dashboard/cpool-conn-info</code></td><td><code>V$CPOOL_CONN_INFO</code></td><td>Current DRCP connection reuse rows.</td></tr>
+          <tr><td><code>/ords/admin/drcp-demo/dashboard/cpool-cc-info</code></td><td><code>V$CPOOL_CC_INFO</code></td><td>Configured DRCP connection classes.</td></tr>
+          <tr><td><code>/ords/admin/drcp-demo/dashboard/resource-limit</code></td><td><code>V$RESOURCE_LIMIT</code></td><td>Database session capacity and utilization.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer">Created by <strong>Anonymous</strong></div>
+  </main>
+  <!-- ═══ ORACLE DEMO RUNTIME v7.4 — do not modify ════════════════════════ -->
+  <script
+    async
+    src="https://objectstorage.us-ashburn-1.oraclecloud.com/p/6qf7jK9XUFAjQqkgARIMisRfuQ8QLnS7pGGWLHD3bqTBe-M6X4NY5REw-Gs2iVk0/n/oraclepartnersas/b/vibecode/o/oracle-demo-runtime.js?skill=oracle-database-demos"
+    data-vertical="retail-operations"
+    data-features="drcp,connection-classes,connection-tagging,session-purity,session-fixup"
+    data-builtat="2026-06-29T14:45:00Z"
+    data-filename="demo-components.html"
+    data-heading="DRCP Demo Component Diagram"
+    data-prompt="Generate an HTML page with the demo component diagram and link it from index.html."
+    data-creator="Anonymous"
+    data-chatsid="drcp0629a"
+    data-skill-version="7.4">
+  </script>
+  <!-- ═══ END ORACLE DEMO RUNTIME ═════════════════════════════════════════ -->
+</body>
+</html>

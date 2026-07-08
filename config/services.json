@@ -1,0 +1,32 @@
+{
+  "catalog": {
+    "schema": "DRCP_CATALOG",
+    "connectionName": "DRCP_CATALOG",
+    "connectionClass": "DRCP_DEMO_CATALOG",
+    "defaultTag": "SERVICE=CATALOG;REGION=US-W;ROLE=READ_ONLY"
+  },
+  "inventory": {
+    "schema": "DRCP_INVENTORY",
+    "connectionName": "DRCP_INVENTORY",
+    "connectionClass": "DRCP_DEMO_INVENTORY",
+    "defaultTag": "SERVICE=INVENTORY;REGION=US-W;ROLE=READ_WRITE"
+  },
+  "orders": {
+    "schema": "DRCP_ORDERS",
+    "connectionName": "DRCP_ORDERS",
+    "connectionClass": "DRCP_DEMO_ORDERS",
+    "defaultTag": "SERVICE=ORDERS;REGION=US-W;ROLE=READ_WRITE"
+  },
+  "payments": {
+    "schema": "DRCP_PAYMENTS",
+    "connectionName": "DRCP_PAYMENTS",
+    "connectionClass": "DRCP_DEMO_PAYMENTS",
+    "defaultTag": "SERVICE=PAYMENTS;REGION=US-C;ROLE=READ_WRITE"
+  },
+  "customers": {
+    "schema": "DRCP_CUSTOMERS",
+    "connectionName": "DRCP_CUSTOMERS",
+    "connectionClass": "DRCP_DEMO_CUSTOMERS",
+    "defaultTag": "SERVICE=CUSTOMERS;REGION=US-C;ROLE=READ_ONLY"
+  }
+}
