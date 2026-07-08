@@ -434,7 +434,7 @@ function setBar(id, value, max) {
 }
 
 function renderDatabaseLimits(limits = {}) {
-  const budget = Number((state.runtime && state.runtime.benchmarkDefaults && state.runtime.benchmarkDefaults.connectionBudget) || 20);
+  const budget = Number((state.runtime && state.runtime.benchmarkDefaults && state.runtime.benchmarkDefaults.connectionBudget) || 40);
   const totals = (state.poolMetrics && state.poolMetrics.totals) || {};
   const current = state.runtime && state.runtime.drcpEnabled
     ? Number(totals.drcp_open_servers || totals.pooled_sessions || limits.allocated_sessions || 0)
@@ -444,12 +444,12 @@ function renderDatabaseLimits(limits = {}) {
   qs('dbSessionCurrent').textContent = current;
   qs('dbSessionPct').textContent = `${pct}%`;
   qs('dbSessionMeter').style.width = `${Math.min(100, Math.max(0, pct))}%`;
-  qs('dbSessionSource').textContent = 'Presentation budget; Oracle database limit remains in Oracle Evidence.';
+  qs('dbSessionSource').textContent = 'Configured connection envelope; Oracle database limit remains in Oracle Evidence.';
   const warning = qs('dbLimitWarning');
   if (warning) {
-    const risky = state.runtime && !state.runtime.drcpEnabled && pct >= 60;
+    const risky = current > budget;
     warning.hidden = !risky;
-    warning.textContent = `Traditional pooling is using ${pct}% of the application connection budget. This is a presentation aid for connection efficiency, not an Oracle Database limit.`;
+    warning.textContent = `The current footprint is using ${pct}% of the configured connection envelope. Increase APPLICATION_CONNECTION_BUDGET or reduce pool sizing if this should stay below 100%.`;
   }
 }
 

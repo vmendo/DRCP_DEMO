@@ -59,7 +59,7 @@
           <li>Recommended baseline: <code>Warm-up=10s</code>, <code>Concurrency=6</code>, <code>Measured duration=45s</code>.</li>
           <li>Traditional pools are configured with <code>TRADITIONAL_POOL_MIN=5</code> and <code>TRADITIONAL_POOL_MAX=8</code> for the validated ADB PRO demo environment.</li>
           <li>DRCP client pools are configured with <code>DRCP_POOL_MIN=0</code> and <code>DRCP_POOL_MAX=8</code>; the shared database-resident pool uses <code>DRCP_RESIDENT_MIN=2</code> and <code>DRCP_RESIDENT_MAX=8</code>.</li>
-          <li>The application connection budget is <code>20</code> sessions. It is a workload guardrail, not the initial Traditional pool footprint or the Oracle Database maximum.</li>
+          <li>The configured connection envelope is <code>40</code> sessions, matching <code>5 services x TRADITIONAL_POOL_MAX=8</code>. It is a presentation guardrail, not the Oracle Database maximum.</li>
           <li>Stop any prior load run and wait a few seconds for the live session table to settle.</li>
         </ul>
       </div>
@@ -129,7 +129,7 @@
         <pre>Traditional path:
 5 service pools x poolMin 5 -> 25 dedicated sessions
 5 service pools x poolMax 8 -> up to 40 client-side capacity
-application connection budget -> 20 sessions as a presentation aid
+configured connection envelope -> 40 sessions, matching 5 service pools x poolMax 8
 
 DRCP path:
 5 service pools x client poolMin 0 -> no per-service minimum idle sessions

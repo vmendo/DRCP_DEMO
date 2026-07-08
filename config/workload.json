@@ -3,7 +3,7 @@
     "warmupSeconds": 10,
     "durationSeconds": 45,
     "concurrency": 6,
-    "connectionBudget": 20,
+    "connectionBudget": 40,
     "requestDelayMs": 100,
     "warmupDelayMs": 250,
     "mode": "drcp",

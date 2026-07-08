@@ -65,7 +65,7 @@ module.exports = {
     warmupSeconds: numberEnv('BENCHMARK_WARMUP_SECONDS', workload.default.warmupSeconds || 10),
     durationSeconds: numberEnv('BENCHMARK_DURATION_SECONDS', workload.default.durationSeconds || 45),
     concurrency: numberEnv('BENCHMARK_CONCURRENCY', workload.default.concurrency || 12),
-    connectionBudget: numberEnv('APPLICATION_CONNECTION_BUDGET', workload.default.connectionBudget || 20),
+    connectionBudget: numberEnv('APPLICATION_CONNECTION_BUDGET', workload.default.connectionBudget || 40),
     requestDelayMs: numberEnv('BENCHMARK_REQUEST_DELAY_MS', workload.default.requestDelayMs || 100),
     warmupDelayMs: numberEnv('BENCHMARK_WARMUP_DELAY_MS', workload.default.warmupDelayMs || 250),
     requestMix: workload.requestMix || {}
